@@ -1,0 +1,744 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Fatty Liver Disease Prediction System API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: predictions
+    description: NAFLD Predictions
+  - name: admin
+    description: Admin operations
+  - name: chat
+    description: AI Chatbot
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login to existing account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /predict:
+    post:
+      operationId: predict
+      tags: [predictions]
+      summary: Run NAFLD prediction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictionInput"
+      responses:
+        "200":
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+
+  /history:
+    get:
+      operationId: getHistory
+      tags: [predictions]
+      summary: Get prediction history for current user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Prediction history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /history/{id}:
+    get:
+      operationId: getPredictionById
+      tags: [predictions]
+      summary: Get a single prediction by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Prediction detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [predictions]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: Get all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserWithStats"
+                required:
+                  - users
+
+  /admin/predictions:
+    get:
+      operationId: adminGetPredictions
+      tags: [admin]
+      summary: Get all predictions (admin only)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: All predictions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPredictionsResponse"
+
+  /admin/retrain:
+    post:
+      operationId: adminRetrain
+      tags: [admin]
+      summary: Retrain the ML model
+      responses:
+        "200":
+          description: Model retrained
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrainResponse"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Get system-wide stats for admin
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /chat:
+    post:
+      operationId: chat
+      tags: [chat]
+      summary: Send message to AI health chatbot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessage"
+      responses:
+        "200":
+          description: Chatbot response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    SignupBody:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        isAdmin:
+          type: boolean
+          default: false
+      required:
+        - username
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - username
+        - email
+        - isAdmin
+        - createdAt
+
+    UserWithStats:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        isAdmin:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        predictionCount:
+          type: integer
+        lastPredictionAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - username
+        - email
+        - isAdmin
+        - createdAt
+        - predictionCount
+
+    PredictionInput:
+      type: object
+      properties:
+        age:
+          type: number
+          description: Age in years
+        gender:
+          type: string
+          enum: [male, female]
+        bmi:
+          type: number
+          description: Body Mass Index
+        alcoholConsumption:
+          type: string
+          enum: [none, low, moderate, heavy]
+        physicalActivity:
+          type: string
+          enum: [sedentary, light, moderate, active, very_active]
+        alt:
+          type: number
+          description: Alanine Aminotransferase (U/L)
+        ast:
+          type: number
+          description: Aspartate Aminotransferase (U/L)
+        cholesterol:
+          type: number
+          description: Total Cholesterol (mg/dL)
+        glucose:
+          type: number
+          description: Fasting Blood Glucose (mg/dL)
+      required:
+        - age
+        - gender
+        - bmi
+        - alcoholConsumption
+        - physicalActivity
+        - alt
+        - ast
+        - cholesterol
+        - glucose
+
+    PredictionResult:
+      type: object
+      properties:
+        riskLevel:
+          type: string
+          enum: [low, moderate, high]
+        probability:
+          type: number
+          description: Risk probability 0-1
+        recommendations:
+          $ref: "#/components/schemas/Recommendations"
+        normalRanges:
+          $ref: "#/components/schemas/NormalRanges"
+        inputValues:
+          $ref: "#/components/schemas/PredictionInput"
+        recordId:
+          type: integer
+          nullable: true
+      required:
+        - riskLevel
+        - probability
+        - recommendations
+        - normalRanges
+        - inputValues
+
+    PredictionRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+        riskLevel:
+          type: string
+          enum: [low, moderate, high]
+        probability:
+          type: number
+        inputValues:
+          $ref: "#/components/schemas/PredictionInput"
+        recommendations:
+          $ref: "#/components/schemas/Recommendations"
+        normalRanges:
+          $ref: "#/components/schemas/NormalRanges"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - riskLevel
+        - probability
+        - inputValues
+        - recommendations
+        - normalRanges
+        - createdAt
+
+    Recommendations:
+      type: object
+      properties:
+        diet:
+          type: array
+          items:
+            type: string
+        exercise:
+          type: array
+          items:
+            type: string
+        lifestyle:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+        - diet
+        - exercise
+        - lifestyle
+        - warnings
+
+    NormalRanges:
+      type: object
+      properties:
+        alt:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            unit:
+              type: string
+          required:
+            - min
+            - max
+            - unit
+        ast:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            unit:
+              type: string
+          required:
+            - min
+            - max
+            - unit
+        cholesterol:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            unit:
+              type: string
+          required:
+            - min
+            - max
+            - unit
+        glucose:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            unit:
+              type: string
+          required:
+            - min
+            - max
+            - unit
+        bmi:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            unit:
+              type: string
+          required:
+            - min
+            - max
+            - unit
+      required:
+        - alt
+        - ast
+        - cholesterol
+        - glucose
+        - bmi
+
+    HistoryResponse:
+      type: object
+      properties:
+        predictions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionRecord"
+        total:
+          type: integer
+      required:
+        - predictions
+        - total
+
+    DashboardStats:
+      type: object
+      properties:
+        totalPredictions:
+          type: integer
+        riskDistribution:
+          type: object
+          properties:
+            low:
+              type: integer
+            moderate:
+              type: integer
+            high:
+              type: integer
+          required:
+            - low
+            - moderate
+            - high
+        averageProbability:
+          type: number
+        recentTrend:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
+              avgProbability:
+                type: number
+            required:
+              - date
+              - count
+              - avgProbability
+      required:
+        - totalPredictions
+        - riskDistribution
+        - averageProbability
+        - recentTrend
+
+    AdminPredictionsResponse:
+      type: object
+      properties:
+        predictions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionRecord"
+        total:
+          type: integer
+      required:
+        - predictions
+        - total
+
+    RetrainResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        accuracy:
+          type: number
+        trainedAt:
+          type: string
+          format: date-time
+      required:
+        - message
+        - accuracy
+        - trainedAt
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalPredictions:
+          type: integer
+        riskDistribution:
+          type: object
+          properties:
+            low:
+              type: integer
+            moderate:
+              type: integer
+            high:
+              type: integer
+          required:
+            - low
+            - moderate
+            - high
+        modelAccuracy:
+          type: number
+        modelLastTrainedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - totalUsers
+        - totalPredictions
+        - riskDistribution
+        - modelAccuracy
+
+    ChatMessage:
+      type: object
+      properties:
+        message:
+          type: string
+        context:
+          type: object
+          nullable: true
+          properties:
+            riskLevel:
+              type: string
+              nullable: true
+            probability:
+              type: number
+              nullable: true
+      required:
+        - message
+
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - reply
+        - suggestions
